@@ -158,7 +158,7 @@
   - _Requirements: 1.3, 2.1, 2.2, 2.3, 2.5, 3.1, 3.2, 3.3, 3.4, 3.5_
   - _Boundary: tests/test_db.py, tests/test_auth.py, tests/test_events.py_
 
-- [ ] 9.2 (P) Tool discovery test with a deliberately broken fixture module
+- [x] 9.2 (P) Tool discovery test with a deliberately broken fixture module
   - Place a fixture module that raises on import under a tests-only tools path; assert that discovery logs an error, skips it, and still registers `echo` and `read_url`
   - Observable: the test asserts the final `ALLOWED_TOOLS` contains exactly the two example tool names and the captured log records contain the broken module's name
   - _Requirements: 4.1, 4.2, 4.3, 4.5_

@@ -48,4 +48,9 @@ SSEEvent = Union[TextEvent, ToolCallEvent, ToolResultEvent, DoneEvent, ErrorEven
 def serialize(event: SSEEvent) -> bytes:
     payload = {k: v for k, v in asdict(event).items() if k != "kind"}
     data = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-    return f"event: {event.kind}\ndata: {data}\n\n".encode("utf-8")
+    id_line = (
+        f"id: {event.message_ord}\n"
+        if isinstance(event, (TextEvent, ToolCallEvent, ToolResultEvent))
+        else ""
+    )
+    return f"event: {event.kind}\n{id_line}data: {data}\n\n".encode("utf-8")

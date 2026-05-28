@@ -43,10 +43,10 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 # event block (event + data + blank line). The order mirrors a real turn:
 # text preamble → tool call → tool result → text response → done.
 _SSE_FIXTURE_CHUNKS: list[bytes] = [
-    b'event: text\ndata: {"text": "Hello ", "message_ord": 1}\n\n',
-    b'event: tool_call\ndata: {"id": "tc1", "name": "echo", "input": {"text": "hi"}, "message_ord": 2}\n\n',
-    b'event: tool_result\ndata: {"tool_use_id": "tc1", "output": "hi", "is_error": false, "message_ord": 3}\n\n',
-    b'event: text\ndata: {"text": "world", "message_ord": 4}\n\n',
+    b'event: text\nid: 1\ndata: {"text": "Hello ", "message_ord": 1}\n\n',
+    b'event: tool_call\nid: 2\ndata: {"id": "tc1", "name": "echo", "input": {"text": "hi"}, "message_ord": 2}\n\n',
+    b'event: tool_result\nid: 3\ndata: {"tool_use_id": "tc1", "output": "hi", "is_error": false, "message_ord": 3}\n\n',
+    b'event: text\nid: 4\ndata: {"text": "world", "message_ord": 4}\n\n',
     b'event: done\ndata: {"session_id": "stub-session", "usage": {}, "is_error": false}\n\n',
 ]
 
