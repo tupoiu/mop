@@ -16,3 +16,4 @@ Ideas and enhancements to consider for future development. These are not committ
 ## Frontend
 
 - **Component library**: Evaluate adopting a component library (e.g., shadcn/ui, Radix UI, or similar) for the frontend to improve UI consistency, accessibility, and development speed.
+- **TypeScript frontend**: Convert the plain-JS frontend to TypeScript for type safety across the SSE event shapes, API response types, and module boundaries. Svelte may be a good fit — its compiler-based approach avoids a heavy runtime, ships minimal JS, and pairs naturally with a single-file-component style that suits the app's modest UI surface.

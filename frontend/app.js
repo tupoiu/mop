@@ -226,7 +226,12 @@ async function init() {
     e.preventDefault();
     const input = document.getElementById("composer-input");
     const content = input.value.trim();
-    if (!content || !activeSessionId) return;
+    if (!content) return;
+    if (!activeSessionId) {
+      const session = await api("POST", "/api/sessions", {});
+      activeSessionId = session.id;
+      await loadSessions();
+    }
     input.value = "";
     appendUserBubble(content);
     await streamTurn(activeSessionId, content);
