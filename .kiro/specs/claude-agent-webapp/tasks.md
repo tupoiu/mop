@@ -147,7 +147,7 @@
   - Observable: `nixpacks plan .` (or equivalent dry run) shows both python and node phases plus the global CLI install, and the start command resolves the `$PORT` placeholder
   - _Requirements: 6.4, 6.5_
 
-- [ ] 8.2 Write the README covering setup, run, deploy, lock-down, and tool authoring
+- [x] 8.2 Write the README covering setup, run, deploy, lock-down, and tool authoring
   - Document local run via `uv run uvicorn app.main:app --reload`, Railway deploy via nixpacks auto-detection (with the env vars and the volume note), and the MVP access-control posture (default Railway URL + bearer token, custom-domain/Cloudflare Access deferred)
   - Document Tailscale Funnel as a self-hosted lock-down option (not a Railway one)
   - Document the Railway Volume attachment for `CONVERSATIONS_DB_PATH` so conversation history survives redeploys
