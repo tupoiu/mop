@@ -77,6 +77,10 @@ cmd = "mypy"
 help = "Format the codebase with ruff."
 cmd = "ruff format ."
 
+[tool.poe.tasks.pre-commit-all]
+help = "Run all pre-commit checks (format)."
+sequence = ["format"]
+
 [tool.poe.tasks.db-reset]
 help = "Delete the local SQLite conversations database."
 shell = "rm -f \"${CONVERSATIONS_DB_PATH:-conversations.db}\" && echo 'database removed'"
