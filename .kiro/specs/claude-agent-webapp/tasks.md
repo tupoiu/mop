@@ -164,7 +164,7 @@
   - _Requirements: 4.1, 4.2, 4.3, 4.5_
   - _Boundary: tests/test_tools_discovery.py_
 
-- [ ] 9.3 Route and streaming integration tests with the SDK monkey-patched
+- [x] 9.3 Route and streaming integration tests with the SDK monkey-patched
   - Drive the FastAPI app with `httpx.AsyncClient`; cover session create/list, history fetch (including 404), unauthenticated 401, send-message happy path (asserts `event: text` … `event: done` ordering and persisted rows), error path (asserts `event: error` and no `done`), and concurrent-second-POST 409
   - Observable: `poe test` runs these tests and they all pass; the test that exercises 409 demonstrates the per-session lock works
   - _Requirements: 1.3, 1.6, 2.1, 2.2, 2.3, 2.4, 2.6, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 4.4_
