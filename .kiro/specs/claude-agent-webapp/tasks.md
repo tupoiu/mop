@@ -70,7 +70,7 @@
   - _Boundary: app/tools/__init__.py_
 
 - [ ] 5. Core: agent wrapper that translates SDK messages to SSE events
-- [ ] 5.1 Implement the streaming turn function
+- [x] 5.1 Implement the streaming turn function
   - Build `ClaudeAgentOptions` with `mcp_servers={"local": tools.MCP_SERVER}`, `allowed_tools=tools.ALLOWED_TOOLS`, `resume=session.sdk_session_id` when present, and `model` from settings when set
   - Iterate `query()`; for each `AssistantMessage` yield one `text` event per `TextBlock` and one `tool_call` event per `ToolUseBlock`; for each subsequent `UserMessage` containing tool-result blocks yield `tool_result`; on `ResultMessage` capture and persist `sdk_session_id` if absent, `touch_session`, and yield the terminal `done` event with `session_id`, `usage`, and `is_error`
   - Persist a corresponding row via the DB helpers as each event is yielded so the persisted history matches what was streamed even on disconnect
