@@ -54,14 +54,14 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.5, 3.6_
 
 - [ ] 4. Core: custom tool auto-discovery and example tools
-- [ ] 4.1 (P) Author the `echo` and `read_url` example tools
+- [x] 4.1 (P) Author the `echo` and `read_url` example tools
   - `echo` returns its input string unchanged using the SDK `@tool` decorator and exports `TOOLS = [echo]`
   - `read_url` fetches a URL with `httpx.AsyncClient` (timeout, follow redirects, response body capped at 200 KB) and exports `TOOLS = [read_url]`
   - Observable: each module imports cleanly and exposes a non-empty `TOOLS` list whose entries are SDK-recognized tool objects
   - _Requirements: 4.2, 4.3_
   - _Boundary: app/tools/echo.py, app/tools/read_url.py_
 
-- [ ] 4.2 (P) Implement tool auto-discovery and SDK MCP server assembly
+- [x] 4.2 (P) Implement tool auto-discovery and SDK MCP server assembly
   - Walk `app.tools` with `pkgutil.iter_modules`, import each submodule under try/except, concatenate every `TOOLS` list found, and build one in-process server via `create_sdk_mcp_server(name="local", version="0.1.0", tools=...)`
   - Compute `ALLOWED_TOOLS` as `["mcp__local__<name>", ...]` for every successfully registered tool
   - Log and skip modules that fail to import or whose `TOOLS` attribute is missing/malformed; startup must still succeed with the remaining valid tools
