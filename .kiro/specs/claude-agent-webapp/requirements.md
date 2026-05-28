@@ -91,3 +91,12 @@ This feature delivers a minimal self-hosted single-user web application that wra
 5. The Agent Web App repository shall provide a `poe lint` task and a `poe format` task that run the project's configured linter and formatter respectively.
 6. The Agent Web App repository shall provide a `poe db-reset` task that deletes the local SQLite conversation database file so the operator can start from a clean state.
 7. Each `poe` task definition in `pyproject.toml` shall include a `help` description so `poe --help` lists the available tasks with a short explanation of each.
+
+### Requirement 8: Automated Frontend Coverage
+**Objective:** As the operator, I want automated browser-driven tests for the SPA, so that frontend regressions (token modal, layout, SSE consumer) are caught alongside backend tests instead of only via the manual end-to-end smoke.
+
+#### Acceptance Criteria
+1. The Agent Web App repository shall include a Playwright-based end-to-end test suite that drives the SPA in a real headless browser.
+2. The Playwright suite shall verify the SPA shell on first load: sidebar, composer, and the in-memory token modal are present, and submitting the modal hides it without persisting the token to `localStorage`, `sessionStorage`, or cookies.
+3. The Playwright suite shall verify the SSE consumer end-to-end against a stub backend that emits a recorded sequence of `text`, `tool_call`, `tool_result`, and `done` frames using the pinned wire framing, asserting that the assistant bubble renders incrementally, tool blocks render as collapsibles, and appending stops on `done`.
+4. The Agent Web App repository shall expose the Playwright suite via a `poe test-e2e` task so it can be run alongside `poe test`.

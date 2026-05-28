@@ -488,7 +488,14 @@ PRAGMA foreign_keys = ON;
   - `POST /api/sessions/{id}/messages` with the SDK *stubbed* (monkeypatch `agent.query`) yields a fixture stream of `AssistantMessage` + `ResultMessage` and verifies the SSE bytes contain `event: text` then `event: done`, and that messages were persisted.
 
 ### E2E
-- Manual smoke per R3: real `claude-agent-sdk` call, send "say hi and call the echo tool with text=hello", observe `text` → `tool_call` → `tool_result` → `text` → `done` in the browser. Documented as a `poe demo` checklist in the README, not automated for the MVP.
+- Manual smoke per R3: real `claude-agent-sdk` call, send "say hi and call the echo tool with text=hello", observe `text` → `tool_call` → `tool_result` → `text` → `done` in the browser. Documented as a `poe demo` checklist in the README.
+
+### Frontend E2E (Playwright, R8)
+- `pytest-playwright` runs against a Python-side stub backend (a small FastAPI app fixture that mounts `frontend/` statically and serves a hardcoded SSE byte stream for `POST /api/sessions/{id}/messages`). No real `claude-agent-sdk` involvement; no network egress.
+- Tests live under `tests_e2e/` to keep them out of the default `pytest` collection (slow, browser-dependent). Invoked via `poe test-e2e`, which installs Chromium on first run (`playwright install chromium`) and runs headless.
+- `test_spa_shell.py`: loads `/`, asserts the token modal is visible, submits, asserts modal hides and `localStorage`/`sessionStorage`/cookies remain empty.
+- `test_sse_consumer.py`: opens a session, sends a message, asserts the assistant bubble accumulates `text` deltas, tool blocks render as `<details>`, and no further appending occurs after `done`.
+- Wire framing is pinned in the stub fixture (`event: <type>\ndata: <json>\n\n`) so any drift in either the server serializer or the browser parser fails the suite.
 
 ## Security Considerations
 - The bearer token is the **only** access control on `/api/*`. Operator owns network exposure.

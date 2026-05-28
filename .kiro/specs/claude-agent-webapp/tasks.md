@@ -80,14 +80,31 @@
   - _Depends: 2.3, 3.2, 4.2_
 
 - [ ] 6. Core: browser SPA
-- [ ] 6.1 (P) Build the static SPA shell and styling
+- [x] 6.1 (P) Build the static SPA shell and styling
   - Author `frontend/index.html` (sidebar, main pane, composer), `frontend/styles.css`, and the entry-point `frontend/app.js` skeleton with no third-party JS or analytics
   - Implement the in-memory token modal that captures the bearer token on first load and never persists it
   - Observable: opening `index.html` directly in a browser shows the layout and the token modal; submitting a value stores it in a module variable that survives navigation but is cleared on full reload
   - _Requirements: 5.1, 5.2, 5.7, 5.8, 1.4, 1.5_
   - _Boundary: frontend/_
 
-- [ ] 6.2 Implement session list, history rendering, and the SSE consumer
+- [ ] 6.2 Set up pytest-playwright harness and SPA shell smoke test
+  - Add `pytest-playwright` to dev dependencies; add `tests_e2e/` directory with `conftest.py` that starts a minimal FastAPI stub (mounts `frontend/` statically, stubs `/api/*` with minimal responses) and calls `playwright install chromium`
+  - Add `poe test-e2e` task in `pyproject.toml` that runs `pytest tests_e2e/ --browser chromium --headless` with a `help` field
+  - Write `tests_e2e/test_spa_shell.py`: navigate to `/`, assert token modal is visible, submit a token value, assert modal hides, assert `localStorage`/`sessionStorage` are empty and no auth cookies are set
+  - Observable: `poe test-e2e` runs headlessly and the shell smoke test passes
+  - _Requirements: 8.1, 8.2, 8.4_
+  - _Boundary: tests_e2e/conftest.py, tests_e2e/test_spa_shell.py_
+  - _Blocked: Chromium runtime libs (libnspr4, libnss3, libasound2, …) not installed in this Debian 12 env; harness + test + `poe test-e2e` task are in place and the suite collects, but the browser cannot launch until `sudo playwright install-deps chromium` is run once on the host. Note: pytest-playwright 0.8.0 made headless the default, so the `poe test-e2e` cmd uses `--browser chromium` without `--headless`._
+
+- [ ] 6.3 Implement SSE consumer e2e test
+  - In the stub backend, serve a hardcoded SSE byte stream for `POST /api/sessions/{id}/messages` using the pinned wire framing (`event: text\ndata: ...\n\n` etc.) covering `text`, `tool_call`, `tool_result`, and `done` frames
+  - Write `tests_e2e/test_sse_consumer.py`: navigate to `/`, submit token, create a session, send a message, assert the assistant bubble accumulates text incrementally, tool blocks render as `<details>` elements, and no further content is appended after `done`
+  - Observable: `poe test-e2e` runs both tests headlessly and both pass
+  - _Requirements: 8.3, 8.4_
+  - _Boundary: tests_e2e/test_sse_consumer.py_
+  - _Depends: 6.2, 6.4_
+
+- [ ] 6.4 Implement session list, history rendering, and the SSE consumer
   - On load and after each new chat, call `GET /api/sessions` with the bearer token and render the sidebar; clicking a session calls `GET /api/sessions/{id}/messages` and renders the history
   - Render user and assistant text as distinct bubbles; render `tool_call` and `tool_result` events as collapsible `<details>` blocks within the conversation
   - Submit user messages via `fetch` to `POST /api/sessions/{id}/messages`; consume the SSE response with a hand-rolled `\n\n`-splitting `ReadableStream` parser that matches the pinned wire framing; append `text` deltas to the in-progress assistant bubble; close the stream on `done`
@@ -161,6 +178,7 @@
   - Observable: a documented checklist in the README is executed once on a clean machine and passes; the resulting `conversations.db` contains the expected message rows for the smoke session
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 4.2, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
   - _Depends: 7.3, 8.2_
+
 
 ## Implementation Notes
 - aiosqlite `Connection` is a `Thread` subclass; `await aiosqlite.connect(p)` starts the worker thread, so the helper used by every db function must wrap `aiosqlite.connect` with `@asynccontextmanager` and `async with aiosqlite.connect(p) as conn` — never `async with await aiosqlite.connect(p)`. The latter raises `RuntimeError: threads can only be started once`.
