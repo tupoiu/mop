@@ -119,7 +119,7 @@
   - _Requirements: 5.1, 6.1_
   - _Depends: 2.1, 3.1, 4.2_
 
-- [ ] 7.2 Implement the session API endpoints
+- [x] 7.2 Implement the session API endpoints
   - `POST /api/sessions` creates a session and returns `{id, title, created_at, updated_at}`; `GET /api/sessions` returns the list ordered most-recently-updated first; `GET /api/sessions/{id}/messages` returns the full message history or 404 if the id is unknown
   - Apply the bearer-token dependency to every `/api/*` route
   - Observable: against a running app, an end-to-end test using `httpx.AsyncClient` exercises create → list → fetch-history and asserts a 404 for an unknown id and a 401 for a missing token
