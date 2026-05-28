@@ -1,0 +1,15 @@
+# Railway deployment configuration via nixpacks
+# Declares both Python and Node.js providers so that uvicorn and
+# the Claude Code CLI (@anthropic-ai/claude-code) are both available.
+
+[phases.setup]
+nixPkgs = ["python311", "nodejs_20"]
+
+[phases.install]
+cmds = [
+  "pip install -e .",
+  "npm install -g @anthropic-ai/claude-code",
+]
+
+[start]
+cmd = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"

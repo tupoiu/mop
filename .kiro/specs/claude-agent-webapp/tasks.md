@@ -141,7 +141,7 @@
   - _Boundary: frontend/app.js_
 
 - [ ] 8. Integration: deployment artifacts and operator documentation
-- [ ] 8.1 Author the Railway deployment artifacts
+- [x] 8.1 Author the Railway deployment artifacts
   - Add `nixpacks.toml` declaring both `python` and `nodejs` providers and an install step that runs `npm i -g @anthropic-ai/claude-code` so the SDK's CLI prerequisite is satisfied
   - Add a `Procfile` (or `railway.json`) whose start command is `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
   - Observable: `nixpacks plan .` (or equivalent dry run) shows both python and node phases plus the global CLI install, and the start command resolves the `$PORT` placeholder
