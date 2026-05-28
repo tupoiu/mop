@@ -21,6 +21,7 @@ dev = [
     "ruff>=0.6",
     "mypy>=1.11",
     "pytest-timeout>=2.4.0",
+    "pytest-playwright>=0.5",
 ]
 
 [build-system]
@@ -58,6 +59,10 @@ cmd = "uvicorn app.main:app --host 127.0.0.1 --port 8000"
 [tool.poe.tasks.test]
 help = "Run the pytest test suite."
 cmd = "pytest"
+
+[tool.poe.tasks.test-e2e]
+help = "Run the Playwright end-to-end test suite headlessly against the SPA stub backend."
+cmd = "pytest tests_e2e/ --browser chromium"
 
 [tool.poe.tasks.lint]
 help = "Lint the codebase with ruff."
