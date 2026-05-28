@@ -67,6 +67,7 @@ This feature delivers a minimal self-hosted single-user web application that wra
 6. While an assistant turn is streaming, the Agent Web App frontend shall append text deltas to the in-progress assistant bubble as they arrive over SSE.
 7. The Agent Web App frontend shall provide an input control at the bottom of the conversation pane for submitting the next user message to the active session.
 8. The Agent Web App frontend shall load no third-party JavaScript and shall emit no analytics or telemetry requests.
+9. When the operator presses Enter in the message input, the Agent Web App frontend shall submit the message; when the operator presses Shift+Enter, it shall insert a newline without submitting.
 
 ### Requirement 6: Configuration, Deployment, and Operability
 **Objective:** As the operator, I want clear configuration and a documented run/deploy path, so that I can stand the app up locally or on a small host with minimal effort.

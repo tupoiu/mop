@@ -134,6 +134,12 @@
   - _Requirements: 1.3, 2.4, 2.6, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
   - _Depends: 5.1, 7.2_
 
+- [x] 6.5 Enter-to-send / Shift+Enter-for-newline in the composer
+  - Intercept `keydown` on `#composer-input`: if `Enter` without `Shift`, prevent the default newline and call `requestSubmit()` on the form; if `Shift+Enter`, let the default newline through
+  - Observable: pressing Enter submits the message; pressing Shift+Enter inserts a newline
+  - _Requirements: 5.9_
+  - _Boundary: frontend/app.js_
+
 - [ ] 8. Integration: deployment artifacts and operator documentation
 - [ ] 8.1 Author the Railway deployment artifacts
   - Add `nixpacks.toml` declaring both `python` and `nodejs` providers and an install step that runs `npm i -g @anthropic-ai/claude-code` so the SDK's CLI prerequisite is satisfied

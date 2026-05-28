@@ -222,6 +222,13 @@ async function init() {
     document.getElementById("conversation").innerHTML = "";
   });
 
+  document.getElementById("composer-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      document.getElementById("composer").requestSubmit();
+    }
+  });
+
   document.getElementById("composer").addEventListener("submit", async (e) => {
     e.preventDefault();
     const input = document.getElementById("composer-input");

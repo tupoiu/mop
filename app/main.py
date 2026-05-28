@@ -221,6 +221,10 @@ def create_app() -> FastAPI:
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        # Force revalidation of static assets so edits to frontend files are
+        # picked up immediately without a hard reload.
+        if not request.url.path.startswith("/api/"):
+            response.headers["Cache-Control"] = "no-cache"
         return response
 
     # API routes must be registered before the static mount — FastAPI resolves
