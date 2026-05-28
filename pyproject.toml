@@ -19,6 +19,8 @@ dev = [
     "poethepoet>=0.29",
     "python-dotenv>=1.0",
     "ruff>=0.6",
+    "mypy>=1.11",
+    "pytest-timeout>=2.4.0",
 ]
 
 [build-system]
@@ -31,10 +33,17 @@ packages = ["app"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+timeout = 5
+timeout_method = "thread"
 
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["app"]
 
 [tool.poe.tasks.dev]
 help = "Run the FastAPI server with auto-reload (loads .env)."
@@ -53,6 +62,10 @@ cmd = "pytest"
 [tool.poe.tasks.lint]
 help = "Lint the codebase with ruff."
 cmd = "ruff check ."
+
+[tool.poe.tasks.types]
+help = "Type-check the app with mypy (strict)."
+cmd = "mypy"
 
 [tool.poe.tasks.format]
 help = "Format the codebase with ruff."

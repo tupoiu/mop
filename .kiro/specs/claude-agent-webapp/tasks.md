@@ -20,33 +20,33 @@
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7_
 
 - [ ] 2. Foundation: configuration and edge primitives
-- [ ] 2.1 Implement settings loading and startup validation
+- [x] 2.1 Implement settings loading and startup validation
   - Read `APP_AUTH_TOKEN`, `ANTHROPIC_API_KEY`, `CONVERSATIONS_DB_PATH` (default `./conversations.db`), and optional `ANTHROPIC_MODEL` from the environment
   - Raise a `RuntimeError` naming the missing variable when either required env var is unset or empty
   - Observable: importing and calling the loader with both required vars set returns a frozen settings object; with either var missing it raises with a message that names the offending variable
   - _Requirements: 1.1, 1.2, 6.1, 6.2_
 
-- [ ] 2.2 Implement the bearer-token authentication dependency
+- [x] 2.2 Implement the bearer-token authentication dependency
   - Compare the incoming `Authorization: Bearer …` header against the configured token using `secrets.compare_digest`
   - Reject mismatches and missing headers with HTTP 401 plus a `WWW-Authenticate: Bearer` response header
   - Observable: a unit test driving the dependency directly returns 401 on missing/wrong tokens and passes through on the configured token
   - _Requirements: 1.3_
   - _Depends: 2.1_
 
-- [ ] 2.3 Implement the SSE event module with pinned wire framing
+- [x] 2.3 Implement the SSE event module with pinned wire framing
   - Define event types (`text`, `tool_call`, `tool_result`, `done`, `error`) and a serializer that emits exactly `event: <type>\ndata: <json>\n\n` (UTF-8, single-line JSON, no `id:`/`retry:`/comment lines)
   - Observable: a round-trip unit test serializes one event of each type and parses it back via a minimal `\n\n`-splitter that recovers the original payload verbatim
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
 - [ ] 3. Foundation: SQLite schema and persistence helpers
-- [ ] 3.1 Initialize the SQLite schema and connection helpers
+- [x] 3.1 Initialize the SQLite schema and connection helpers
   - Implement an `init_db` routine that creates the `sessions` and `messages` tables (with the constraints, indexes, and `PRAGMA journal_mode=WAL` / `PRAGMA foreign_keys=ON` from the design) idempotently
   - Resolve the DB file path from `CONVERSATIONS_DB_PATH` so it can point at a mounted volume
   - Observable: running init twice against a fresh path leaves both tables present, `journal_mode` returns `wal`, and the indexes exist
   - _Requirements: 2.5_
   - _Depends: 2.1_
 
-- [ ] 3.2 Implement session and message CRUD helpers
+- [x] 3.2 Implement session and message CRUD helpers
   - Implement create/list/get for sessions, append/list for messages, plus `update_session_sdk_id` and `touch_session`
   - Sessions list returns rows ordered by `updated_at DESC`; messages list returns rows in `ord ASC` for one session id
   - `append_message` accepts the four `kind` values (`text`, `tool_call`, `tool_result`, `error`) and a JSON-encoded content payload
@@ -161,3 +161,6 @@
   - Observable: a documented checklist in the README is executed once on a clean machine and passes; the resulting `conversations.db` contains the expected message rows for the smoke session
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 4.2, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
   - _Depends: 7.3, 8.2_
+
+## Implementation Notes
+- aiosqlite `Connection` is a `Thread` subclass; `await aiosqlite.connect(p)` starts the worker thread, so the helper used by every db function must wrap `aiosqlite.connect` with `@asynccontextmanager` and `async with aiosqlite.connect(p) as conn` — never `async with await aiosqlite.connect(p)`. The latter raises `RuntimeError: threads can only be started once`.

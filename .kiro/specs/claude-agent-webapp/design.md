@@ -100,6 +100,7 @@ flowchart LR
 | Storage | SQLite via `aiosqlite`, WAL mode | Sessions + messages | Path from `CONVERSATIONS_DB_PATH` |
 | HTTP client | `httpx` | Used inside `read_url` tool | |
 | Task runner | `poethepoet` | `poe dev`, `poe demo`, etc. | Dev-only |
+| Type checker | `mypy` (strict) | Static type checking over `app/` via `poe types` | Tests excluded |
 | Packaging | `pyproject.toml`, `uv` | Lockfile + run | |
 | Deploy | Railway nixpacks | Auto-detect Python; declare Node via `nixpacks.toml` | |
 
