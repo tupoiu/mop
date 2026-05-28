@@ -94,9 +94,8 @@
   - Observable: `poe test-e2e` runs headlessly and the shell smoke test passes
   - _Requirements: 8.1, 8.2, 8.4_
   - _Boundary: tests_e2e/conftest.py, tests_e2e/test_spa_shell.py_
-  - _Blocked: Chromium runtime libs (libnspr4, libnss3, libasound2, …) not installed in this Debian 12 env; harness + test + `poe test-e2e` task are in place and the suite collects, but the browser cannot launch until `sudo playwright install-deps chromium` is run once on the host. Note: pytest-playwright 0.8.0 made headless the default, so the `poe test-e2e` cmd uses `--browser chromium` without `--headless`._
 
-- [ ] 6.3 Implement SSE consumer e2e test
+- [x] 6.3 Implement SSE consumer e2e test
   - In the stub backend, serve a hardcoded SSE byte stream for `POST /api/sessions/{id}/messages` using the pinned wire framing (`event: text\ndata: ...\n\n` etc.) covering `text`, `tool_call`, `tool_result`, and `done` frames
   - Write `tests_e2e/test_sse_consumer.py`: navigate to `/`, submit token, create a session, send a message, assert the assistant bubble accumulates text incrementally, tool blocks render as `<details>` elements, and no further content is appended after `done`
   - Observable: `poe test-e2e` runs both tests headlessly and both pass
@@ -104,7 +103,7 @@
   - _Boundary: tests_e2e/test_sse_consumer.py_
   - _Depends: 6.2, 6.4_
 
-- [ ] 6.4 Implement session list, history rendering, and the SSE consumer
+- [x] 6.4 Implement session list, history rendering, and the SSE consumer
   - On load and after each new chat, call `GET /api/sessions` with the bearer token and render the sidebar; clicking a session calls `GET /api/sessions/{id}/messages` and renders the history
   - Render user and assistant text as distinct bubbles; render `tool_call` and `tool_result` events as collapsible `<details>` blocks within the conversation
   - Submit user messages via `fetch` to `POST /api/sessions/{id}/messages`; consume the SSE response with a hand-rolled `\n\n`-splitting `ReadableStream` parser that matches the pinned wire framing; append `text` deltas to the in-progress assistant bubble; close the stream on `done`
