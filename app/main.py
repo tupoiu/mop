@@ -9,20 +9,24 @@ Responsibilities:
 """
 
 import asyncio
+import json
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncIterator
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
+from app import agent
 from app.auth import require_token
 from app.config import Settings, load_settings
-from app.db import create_session, get_session, list_messages, list_sessions
+from app.db import append_message, create_session, get_session, list_messages, list_sessions
 from app.db import init_db
+from app.events import serialize
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +59,10 @@ class _MessageOut(TypedDict):
 
 class _CreateSessionBody(BaseModel):
     title: str | None = None
+
+
+class _SendMessageBody(BaseModel):
+    content: str
 
 
 # ---------------------------------------------------------------------------
@@ -102,6 +110,58 @@ async def _get_messages(request: Request, session_id: str) -> dict[str, list[_Me
             for m in rows
         ]
     }
+
+
+@_api.post("/sessions/{session_id}/messages", response_model=None)
+async def _send_message(
+    request: Request,
+    session_id: str,
+    body: _SendMessageBody,
+) -> StreamingResponse | JSONResponse:
+    settings: Settings = request.app.state.settings
+    db_path = settings.conversations_db_path
+
+    session = await get_session(db_path, session_id)
+    if session is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="session not found")
+
+    await append_message(
+        db_path,
+        session_id=session_id,
+        role="user",
+        kind="text",
+        content_json=json.dumps({"text": body.content}),
+    )
+
+    locks: dict[str, asyncio.Lock] = request.app.state.session_locks
+    if session_id not in locks:
+        locks[session_id] = asyncio.Lock()
+    lock = locks[session_id]
+
+    if lock.locked():
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"error": "session_busy"},
+        )
+    await lock.acquire()
+
+    async def _generate() -> AsyncIterator[bytes]:
+        try:
+            async for event in agent.stream_turn(settings, db_path, session, body.content):
+                if await request.is_disconnected():
+                    break
+                yield serialize(event)
+        finally:
+            lock.release()
+
+    return StreamingResponse(
+        _generate(),
+        media_type="text/event-stream; charset=utf-8",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 # ---------------------------------------------------------------------------

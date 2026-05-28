@@ -126,7 +126,7 @@
   - _Requirements: 1.3, 2.1, 2.2, 2.3, 2.4_
   - _Depends: 2.2, 3.2, 7.1_
 
-- [ ] 7.3 Implement the streaming send-message endpoint with per-session lock
+- [x] 7.3 Implement the streaming send-message endpoint with per-session lock
   - On `POST /api/sessions/{id}/messages`: enforce auth, return 404 if the session does not exist, persist the user message, then attempt to acquire `app.state.session_locks[id]` non-blocking; if held, return HTTP 409 with `{"error": "session_busy"}`
   - With the lock held, return an `EventSourceResponse` (or equivalent) that drives `agent.stream_turn`, polls `await request.is_disconnected()` between events, and on disconnect stops iterating without emitting `done`
   - Set `Content-Type: text/event-stream; charset=utf-8`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`
@@ -151,7 +151,7 @@
   - _Depends: 4.2, 7.1, 8.1_
 
 - [ ] 9. Validation: automated test suite
-- [ ] 9.1 (P) Unit and integration tests for foundation modules
+- [x] 9.1 (P) Unit and integration tests for foundation modules
   - Cover `db.py` (schema init idempotency, CRUD round-trip, ordering), `auth.py` (401 + passthrough), and `events.py` (per-event-type framing round-trip)
   - Each test exercises behavior referenced in its requirement IDs
   - Observable: `poe test` runs these tests and they all pass against a fresh checkout
