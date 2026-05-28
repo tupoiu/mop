@@ -17,3 +17,5 @@ __pycache__/
 
 # uv
 .venv/
+
+*.jj_checkpoints.jsonl
