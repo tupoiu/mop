@@ -1,11 +1,18 @@
 from typing import Any
 
-from claude_agent_sdk import SdkMcpTool, tool
+from claude_agent_sdk import SdkMcpTool
+from pydantic import BaseModel
+
+from app.tools._pydantic_tool import TextContent, ToolResult, pydantic_tool
 
 
-@tool("echo", "Return the input string unchanged.", {"text": str})
-async def echo(args: dict[str, Any]) -> dict[str, Any]:
-    return {"content": [{"type": "text", "text": args["text"]}]}
+class EchoArgs(BaseModel):
+    text: str
+
+
+@pydantic_tool("echo", "Return the input string unchanged.", EchoArgs)
+async def echo(args: EchoArgs) -> ToolResult:
+    return ToolResult(content=[TextContent(text=args.text)])
 
 
 TOOLS: list[SdkMcpTool[Any]] = [echo]

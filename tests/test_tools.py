@@ -32,6 +32,24 @@ async def test_echo_handler_returns_input_unchanged() -> None:
     assert result == {"content": [{"type": "text", "text": "hello world"}]}
 
 
+async def test_echo_handler_validates_args_via_pydantic() -> None:
+    from pydantic import ValidationError
+
+    from app.tools.echo import TOOLS
+
+    with pytest.raises(ValidationError):
+        await TOOLS[0].handler({"text": 123})  # type: ignore[arg-type]
+
+
+async def test_echo_handler_rejects_missing_required_field() -> None:
+    from pydantic import ValidationError
+
+    from app.tools.echo import TOOLS
+
+    with pytest.raises(ValidationError):
+        await TOOLS[0].handler({})
+
+
 # ----- 4.2: production smoke -----
 
 def test_app_tools_registers_both_examples() -> None:
