@@ -16,9 +16,7 @@ class ReadUrlArgs(BaseModel):
 
 @pydantic_tool("read_url", "Fetch a URL and return its body as text.", ReadUrlArgs)
 async def read_url(args: ReadUrlArgs) -> ToolResult:
-    async with httpx.AsyncClient(
-        timeout=_TIMEOUT_SECONDS, follow_redirects=True
-    ) as client:
+    async with httpx.AsyncClient(timeout=_TIMEOUT_SECONDS, follow_redirects=True) as client:
         response = await client.get(args.url)
         response.raise_for_status()
         body = response.text[:_MAX_BODY_BYTES]

@@ -9,6 +9,7 @@ from claude_agent_sdk import SdkMcpTool, tool
 
 # ----- 4.1: example tools -----
 
+
 def test_echo_module_exports_a_tool() -> None:
     from app.tools.echo import TOOLS
 
@@ -52,6 +53,7 @@ async def test_echo_handler_rejects_missing_required_field() -> None:
 
 # ----- 4.2: production smoke -----
 
+
 def test_app_tools_registers_both_examples() -> None:
     from app.tools import ALLOWED_TOOLS, MCP_SERVER
 
@@ -60,6 +62,7 @@ def test_app_tools_registers_both_examples() -> None:
 
 
 # ----- 4.2: extract_tools (TOOLS-attribute contract) -----
+
 
 def _make_module(name: str = "fake") -> ModuleType:
     return ModuleType(name)
@@ -117,6 +120,7 @@ def test_extract_tools_filters_non_sdkmcptool_entries(
 
 
 # ----- 4.2: walk_package (broken-module tolerance) -----
+
 
 def test_walk_package_skips_modules_that_fail_to_import(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture

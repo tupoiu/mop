@@ -11,9 +11,7 @@ Covers requirements 8.3, 8.4.
 from playwright.sync_api import Page, expect
 
 
-def test_sse_consumer_renders_assistant_bubble_and_tool_blocks(
-    page: Page, stub_url: str
-) -> None:
+def test_sse_consumer_renders_assistant_bubble_and_tool_blocks(page: Page, stub_url: str) -> None:
     page.goto(f"{stub_url}/")
 
     # Dismiss token modal

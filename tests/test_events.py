@@ -21,14 +21,14 @@ def _parse_frame(raw: bytes) -> tuple[str, dict, str | None]:
     lines = body.split("\n")
     assert 2 <= len(lines) <= 3, f"frame must be 2-3 lines, got {lines!r}"
     assert lines[0].startswith("event: ")
-    kind = lines[0][len("event: "):]
+    kind = lines[0][len("event: ") :]
     event_id: str | None = None
     data_str: str | None = None
     for line in lines[1:]:
         if line.startswith("id: "):
-            event_id = line[len("id: "):]
+            event_id = line[len("id: ") :]
         elif line.startswith("data: "):
-            data_str = line[len("data: "):]
+            data_str = line[len("data: ") :]
     assert data_str is not None, "frame missing data: line"
     return kind, json.loads(data_str), event_id
 
@@ -108,4 +108,4 @@ def test_data_is_single_line_json():
     raw = serialize(TextEvent(text="a\nb", message_ord=0)).decode("utf-8")
     body = raw[: -len("\n\n")]
     data_line = next(line for line in body.split("\n") if line.startswith("data: "))
-    assert "\n" not in data_line[len("data: "):]
+    assert "\n" not in data_line[len("data: ") :]

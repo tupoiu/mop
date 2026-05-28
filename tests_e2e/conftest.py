@@ -37,6 +37,7 @@ class _MessageRow(TypedDict):
     content_json: str
     created_at: str
 
+
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 # Pinned SSE fixture used by test_sse_consumer.py. Each chunk is one complete

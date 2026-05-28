@@ -49,13 +49,9 @@ def _assistant(*blocks: Any) -> AssistantMessage:
     )
 
 
-def _user_with_tool_result(
-    tool_use_id: str, content: Any, is_error: bool = False
-) -> UserMessage:
+def _user_with_tool_result(tool_use_id: str, content: Any, is_error: bool = False) -> UserMessage:
     return UserMessage(
-        content=[
-            ToolResultBlock(tool_use_id=tool_use_id, content=content, is_error=is_error)
-        ],
+        content=[ToolResultBlock(tool_use_id=tool_use_id, content=content, is_error=is_error)],
         uuid=None,
         parent_tool_use_id=None,
         tool_use_result=None,
@@ -93,9 +89,7 @@ def _patch_query(
     messages: list[Any],
     capture: list[Any] | None = None,
 ) -> None:
-    async def fake_query(
-        *, prompt: str, options: Any = None
-    ) -> AsyncIterator[Any]:
+    async def fake_query(*, prompt: str, options: Any = None) -> AsyncIterator[Any]:
         if capture is not None:
             capture.append(SimpleNamespace(prompt=prompt, options=options))
         for m in messages:
@@ -105,6 +99,7 @@ def _patch_query(
 
 
 # ----- options -----
+
 
 def test_build_options_includes_mcp_server_and_allowed_tools() -> None:
     from app.tools import ALLOWED_TOOLS, MCP_SERVER
@@ -130,13 +125,12 @@ def test_build_options_omits_model_when_none() -> None:
 
 
 def test_build_options_passes_model_when_set() -> None:
-    options = _build_options(
-        _settings(model="claude-sonnet-4-6"), sdk_session_id=None
-    )
+    options = _build_options(_settings(model="claude-sonnet-4-6"), sdk_session_id=None)
     assert options.model == "claude-sonnet-4-6"
 
 
 # ----- streaming -----
+
 
 async def test_happy_path_yields_expected_events_and_persists_rows(
     db_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -251,11 +245,7 @@ async def test_done_event_carries_usage_and_session_id(
 
     _patch_query(
         monkeypatch,
-        [
-            _result(
-                session_id="sdk-Z", usage={"input_tokens": 99, "output_tokens": 11}
-            )
-        ],
+        [_result(session_id="sdk-Z", usage={"input_tokens": 99, "output_tokens": 11})],
     )
     events = [ev async for ev in stream_turn(_settings(), db_path, session, "hi")]
 

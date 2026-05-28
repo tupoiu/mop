@@ -38,6 +38,7 @@ _FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 # Response shapes
 # ---------------------------------------------------------------------------
 
+
 class _SessionOut(TypedDict):
     id: str
     title: str | None
@@ -58,6 +59,7 @@ class _MessageOut(TypedDict):
 # Request bodies
 # ---------------------------------------------------------------------------
 
+
 class _CreateSessionBody(BaseModel):
     title: str | None = None
 
@@ -74,10 +76,14 @@ _api = APIRouter(prefix="/api", dependencies=[Depends(require_token)])
 
 
 @_api.post("/sessions")
-async def _create_session(request: Request, body: _CreateSessionBody = _CreateSessionBody()) -> _SessionOut:
+async def _create_session(
+    request: Request, body: _CreateSessionBody = _CreateSessionBody()
+) -> _SessionOut:
     db = request.app.state.settings.conversations_db_path
     row = await create_session(db, title=body.title)
-    return _SessionOut(id=row.id, title=row.title, created_at=row.created_at, updated_at=row.updated_at)
+    return _SessionOut(
+        id=row.id, title=row.title, created_at=row.created_at, updated_at=row.updated_at
+    )
 
 
 @_api.get("/sessions")
@@ -169,6 +175,7 @@ async def _send_message(
 # Lifespan
 # ---------------------------------------------------------------------------
 
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Startup / shutdown lifecycle handler.
@@ -182,7 +189,11 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
        handlers can access them without importing global state.
     """
     settings: Settings = load_settings()
-    logger.info("Settings loaded (model=%s, db=%s)", settings.anthropic_model, settings.conversations_db_path)
+    logger.info(
+        "Settings loaded (model=%s, db=%s)",
+        settings.anthropic_model,
+        settings.conversations_db_path,
+    )
 
     await init_db(settings.conversations_db_path)
     logger.info("Database initialised at %s", settings.conversations_db_path)
@@ -207,6 +218,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 # ---------------------------------------------------------------------------
 # App factory
 # ---------------------------------------------------------------------------
+
 
 def create_app() -> FastAPI:
     """Factory that creates and configures the FastAPI application."""

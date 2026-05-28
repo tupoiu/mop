@@ -21,7 +21,9 @@ _AUTH = {"Authorization": f"Bearer {_TOKEN}"}
 
 
 @pytest.fixture()
-async def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[httpx.AsyncClient]:
+async def client(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> AsyncIterator[httpx.AsyncClient]:
     """Start the app via its ASGI lifespan, yield an authenticated client."""
     db_file = tmp_path / "test.db"
     monkeypatch.setenv("APP_AUTH_TOKEN", _TOKEN)
@@ -66,6 +68,7 @@ async def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> AsyncIterat
 # POST /api/sessions
 # ---------------------------------------------------------------------------
 
+
 async def test_create_session_returns_session_fields(client: httpx.AsyncClient) -> None:
     resp = await client.post("/api/sessions", json={}, headers=_AUTH)
     assert resp.status_code == 200
@@ -98,6 +101,7 @@ async def test_create_session_rejects_wrong_token(client: httpx.AsyncClient) -> 
 # GET /api/sessions
 # ---------------------------------------------------------------------------
 
+
 async def test_list_sessions_includes_created_session(client: httpx.AsyncClient) -> None:
     session_id = (await client.post("/api/sessions", json={}, headers=_AUTH)).json()["id"]
 
@@ -124,6 +128,7 @@ async def test_list_sessions_requires_auth(client: httpx.AsyncClient) -> None:
 # ---------------------------------------------------------------------------
 # GET /api/sessions/{id}/messages
 # ---------------------------------------------------------------------------
+
 
 async def test_get_messages_empty_for_new_session(client: httpx.AsyncClient) -> None:
     session_id = (await client.post("/api/sessions", json={}, headers=_AUTH)).json()["id"]

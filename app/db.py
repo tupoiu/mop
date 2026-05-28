@@ -95,8 +95,7 @@ async def create_session(path: Path, *, title: str | None = None) -> SessionRow:
 async def get_session(path: Path, session_id: str) -> SessionRow | None:
     async with _connect(path) as conn:
         cursor = await conn.execute(
-            "SELECT id, title, sdk_session_id, created_at, updated_at "
-            "FROM sessions WHERE id = ?",
+            "SELECT id, title, sdk_session_id, created_at, updated_at FROM sessions WHERE id = ?",
             (session_id,),
         )
         row = await cursor.fetchone()

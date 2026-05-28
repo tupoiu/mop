@@ -42,9 +42,7 @@ class _ToolResultPayload(TypedDict):
     is_error: bool
 
 
-def _build_options(
-    settings: Settings, sdk_session_id: str | None
-) -> ClaudeAgentOptions:
+def _build_options(settings: Settings, sdk_session_id: str | None) -> ClaudeAgentOptions:
     return ClaudeAgentOptions(
         mcp_servers={"local": tools.MCP_SERVER},
         allowed_tools=tools.ALLOWED_TOOLS,
@@ -148,9 +146,7 @@ async def stream_turn(
                             )
             elif isinstance(message, ResultMessage):
                 if not sdk_session_id_persisted:
-                    await db.update_session_sdk_id(
-                        db_path, session.id, message.session_id
-                    )
+                    await db.update_session_sdk_id(db_path, session.id, message.session_id)
                     sdk_session_id_persisted = True
                 else:
                     await db.touch_session(db_path, session.id)

@@ -44,9 +44,9 @@ def _parse_sse_lines(raw: bytes) -> list[dict[str, str]]:
         ev: dict[str, str] = {}
         for line in lines:
             if line.startswith(b"event: "):
-                ev["event"] = line[len(b"event: "):].decode()
+                ev["event"] = line[len(b"event: ") :].decode()
             elif line.startswith(b"data: "):
-                ev["data"] = line[len(b"data: "):].decode()
+                ev["data"] = line[len(b"data: ") :].decode()
         if ev:
             events.append(ev)
     return events
@@ -129,7 +129,9 @@ async def test_send_message_returns_text_event_stream(
 ) -> None:
     monkeypatch.setattr(
         "app.agent.stream_turn",
-        _make_stream(TextEvent(text="hi", message_ord=1), DoneEvent(session_id="s", usage={}, is_error=False)),
+        _make_stream(
+            TextEvent(text="hi", message_ord=1), DoneEvent(session_id="s", usage={}, is_error=False)
+        ),
     )
     async with client.stream(
         "POST",
@@ -295,9 +297,7 @@ async def test_send_message_returns_409_when_session_locked(
 
     # Launch first request in the background; it holds the lock via slow_stream
     first_task: asyncio.Task[bytes] = asyncio.ensure_future(
-        _consume_stream(
-            client, f"/api/sessions/{session_id}/messages", {"content": "first"}
-        )
+        _consume_stream(client, f"/api/sessions/{session_id}/messages", {"content": "first"})
     )
 
     # Wait until slow_stream has started (lock is held)
@@ -317,8 +317,6 @@ async def test_send_message_returns_409_when_session_locked(
     await asyncio.wait_for(first_task, timeout=3.0)
 
 
-async def _consume_stream(
-    client: httpx.AsyncClient, url: str, body: dict[str, Any]
-) -> bytes:
+async def _consume_stream(client: httpx.AsyncClient, url: str, body: dict[str, Any]) -> bytes:
     async with client.stream("POST", url, json=body, headers=_AUTH) as resp:
         return await resp.aread()
