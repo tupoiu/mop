@@ -1,0 +1,19 @@
+# Runtime artifacts
+conversations.db
+conversations.db-*
+*.sqlite
+*.sqlite-journal
+
+# Secrets
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# uv
+.venv/

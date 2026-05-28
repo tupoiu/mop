@@ -1,0 +1,63 @@
+[project]
+name = "claude-agent-webapp"
+version = "0.1.0"
+description = "Minimal self-hosted Claude agent web app."
+requires-python = ">=3.11"
+dependencies = [
+    "claude-agent-sdk>=0.1.80",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.30",
+    "sse-starlette>=2.1",
+    "aiosqlite>=0.20",
+    "httpx>=0.27",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "poethepoet>=0.29",
+    "python-dotenv>=1.0",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.poe.tasks.dev]
+help = "Run the FastAPI server with auto-reload (loads .env)."
+envfile = ".env"
+cmd = "uvicorn app.main:app --reload --host 127.0.0.1 --port 8000"
+
+[tool.poe.tasks.demo]
+help = "Run the server with deterministic demo config (loads .env, no reload)."
+envfile = ".env"
+cmd = "uvicorn app.main:app --host 127.0.0.1 --port 8000"
+
+[tool.poe.tasks.test]
+help = "Run the pytest test suite."
+cmd = "pytest"
+
+[tool.poe.tasks.lint]
+help = "Lint the codebase with ruff."
+cmd = "ruff check ."
+
+[tool.poe.tasks.format]
+help = "Format the codebase with ruff."
+cmd = "ruff format ."
+
+[tool.poe.tasks.db-reset]
+help = "Delete the local SQLite conversations database."
+shell = "rm -f \"${CONVERSATIONS_DB_PATH:-conversations.db}\" && echo 'database removed'"
