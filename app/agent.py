@@ -7,6 +7,7 @@ from claude_agent_sdk import (
     AssistantMessage,
     ClaudeAgentOptions,
     ResultMessage,
+    StreamEvent,
     TextBlock,
     ToolResultBlock,
     ToolUseBlock,
@@ -49,6 +50,7 @@ def _build_options(
         allowed_tools=tools.ALLOWED_TOOLS,
         resume=sdk_session_id,
         model=settings.anthropic_model,
+        include_partial_messages=True,
     )
 
 
@@ -75,9 +77,19 @@ async def stream_turn(
     options = _build_options(settings, session.sdk_session_id)
     sdk_session_id_persisted = session.sdk_session_id is not None
 
+    streamed_any_text = False
+
     try:
         async for message in query(prompt=user_content, options=options):
-            if isinstance(message, AssistantMessage):
+            if isinstance(message, StreamEvent):
+                raw = message.event
+                if (
+                    raw.get("type") == "content_block_delta"
+                    and raw.get("delta", {}).get("type") == "text_delta"
+                ):
+                    streamed_any_text = True
+                    yield TextEvent(text=raw["delta"]["text"], message_ord=0)
+            elif isinstance(message, AssistantMessage):
                 for block in message.content:
                     if isinstance(block, TextBlock):
                         row = await db.append_message(
@@ -87,7 +99,9 @@ async def stream_turn(
                             kind="text",
                             content_json=json.dumps({"text": block.text}),
                         )
-                        yield TextEvent(text=block.text, message_ord=row.ord)
+                        # Only emit if text wasn't already streamed via deltas.
+                        if not streamed_any_text:
+                            yield TextEvent(text=block.text, message_ord=row.ord)
                     elif isinstance(block, ToolUseBlock):
                         payload: _ToolCallPayload = {
                             "id": block.id,
