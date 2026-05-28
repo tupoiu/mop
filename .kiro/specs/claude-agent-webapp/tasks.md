@@ -87,7 +87,7 @@
   - _Requirements: 5.1, 5.2, 5.7, 5.8, 1.4, 1.5_
   - _Boundary: frontend/_
 
-- [ ] 6.2 Set up pytest-playwright harness and SPA shell smoke test
+- [x] 6.2 Set up pytest-playwright harness and SPA shell smoke test
   - Add `pytest-playwright` to dev dependencies; add `tests_e2e/` directory with `conftest.py` that starts a minimal FastAPI stub (mounts `frontend/` statically, stubs `/api/*` with minimal responses) and calls `playwright install chromium`
   - Add `poe test-e2e` task in `pyproject.toml` that runs `pytest tests_e2e/ --browser chromium --headless` with a `help` field
   - Write `tests_e2e/test_spa_shell.py`: navigate to `/`, assert token modal is visible, submit a token value, assert modal hides, assert `localStorage`/`sessionStorage` are empty and no auth cookies are set
@@ -113,7 +113,7 @@
   - _Boundary: frontend/_
 
 - [ ] 7. Integration: FastAPI routes, session lock, and static mount
-- [ ] 7.1 Wire the FastAPI app, lifespan startup, and static mount
+- [x] 7.1 Wire the FastAPI app, lifespan startup, and static mount
   - Build the FastAPI app with a lifespan handler that loads settings, calls `init_db`, imports `app.tools` (triggering discovery), and stashes settings + a `session_locks: dict[str, asyncio.Lock]` map on `app.state`
   - Mount `frontend/` as static files so `GET /` serves `index.html` and asset paths resolve
   - Observable: starting the app via `poe dev` against a populated `.env` returns 200 on `GET /` with `index.html` content and logs successful tool discovery for `echo` and `read_url`
@@ -182,3 +182,4 @@
 
 ## Implementation Notes
 - aiosqlite `Connection` is a `Thread` subclass; `await aiosqlite.connect(p)` starts the worker thread, so the helper used by every db function must wrap `aiosqlite.connect` with `@asynccontextmanager` and `async with aiosqlite.connect(p) as conn` — never `async with await aiosqlite.connect(p)`. The latter raises `RuntimeError: threads can only be started once`.
+- It may be better to make the pydantic_tool decorator also produce structured outputs
