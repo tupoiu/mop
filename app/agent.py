@@ -45,7 +45,8 @@ class _ToolResultPayload(TypedDict):
 def _build_options(settings: Settings, sdk_session_id: str | None) -> ClaudeAgentOptions:
     return ClaudeAgentOptions(
         mcp_servers={"local": tools.MCP_SERVER},
-        allowed_tools=tools.ALLOWED_TOOLS,
+        # Web search is enabled by default via the SDK's built-in WebSearch tool.
+        allowed_tools=[*tools.ALLOWED_TOOLS, "WebSearch"],
         resume=sdk_session_id,
         model=settings.anthropic_model,
         include_partial_messages=True,

@@ -106,7 +106,7 @@ def test_build_options_includes_mcp_server_and_allowed_tools() -> None:
 
     options = _build_options(_settings(), sdk_session_id=None)
     assert options.mcp_servers == {"local": MCP_SERVER}
-    assert options.allowed_tools == ALLOWED_TOOLS
+    assert options.allowed_tools == [*ALLOWED_TOOLS, "WebSearch"]
 
 
 def test_build_options_omits_resume_when_session_id_is_none() -> None:
