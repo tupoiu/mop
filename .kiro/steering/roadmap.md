@@ -30,6 +30,8 @@ Ideas and enhancements to consider for future development. These are not committ
   - The current time in the UK (use python for this)
   - The current length of the conversation in words/and messages (e.g. "10000/300W (A/U), 50M" for a conversation with 10000 words from the agent, 300 from the user, and 50 messages)
 
+- **Ally summary extensions** As well as the basic functionality about sleeping and length of time, it would be nice to be forced to stop and be aware of e.g. whether I've eaten, whether I've been on a walk before noon (on a non-work day). In addition it would be worth thinking about the question of dependence and how not to depend on AI to look after myself, but instead look after myself naturally. This could be done by asking leading questions like "Are you forgetting something?" or "Are you in the right place?"
+
 - **Random words** It's easy to get weirder and more creative results out of an AI by passing in a selection of random words. Add a button on the taskbar to add random words. Also, if it's been developed, add a command palette function for this.
 
 - **Command palette** Add a command palette which opens with "Ctrl + Shift + P" which when pressed opens up a palette like the VSCode one which has a list of commands. In the first version of this palette we should include:
