@@ -42,7 +42,36 @@ class ErrorEvent:
     kind: Literal["error"] = "error"
 
 
-SSEEvent = Union[TextEvent, ToolCallEvent, ToolResultEvent, DoneEvent, ErrorEvent]
+@dataclass(frozen=True)
+class AllyMetricsEvent:
+    agent_words: int
+    user_words: int
+    message_count: int
+    uk_time: str
+    kind: Literal["ally_metrics"] = "ally_metrics"
+
+
+@dataclass(frozen=True)
+class AllySummaryEvent:
+    topic: str
+    classification: str
+    agent_words: int
+    user_words: int
+    message_count: int
+    uk_time: str
+    warning: bool
+    kind: Literal["ally_summary"] = "ally_summary"
+
+
+SSEEvent = Union[
+    TextEvent,
+    ToolCallEvent,
+    ToolResultEvent,
+    DoneEvent,
+    ErrorEvent,
+    AllyMetricsEvent,
+    AllySummaryEvent,
+]
 
 
 def serialize(event: SSEEvent) -> bytes:

@@ -1,6 +1,8 @@
 import json
 
 from app.events import (
+    AllyMetricsEvent,
+    AllySummaryEvent,
     DoneEvent,
     ErrorEvent,
     TextEvent,
@@ -93,6 +95,54 @@ def test_no_id_on_events_without_message_ord():
     ):
         raw = serialize(event).decode("utf-8")
         assert "id:" not in raw, f"unexpected id: line in {event!r}"
+
+
+def test_ally_metrics_event_roundtrip():
+    raw = serialize(
+        AllyMetricsEvent(
+            agent_words=120,
+            user_words=45,
+            message_count=8,
+            uk_time="2026-06-27 14:30",
+        )
+    )
+    kind, data, event_id = _parse_frame(raw)
+    assert kind == "ally_metrics"
+    assert data == {
+        "agent_words": 120,
+        "user_words": 45,
+        "message_count": 8,
+        "uk_time": "2026-06-27 14:30",
+    }
+    assert event_id is None
+    assert "id:" not in raw.decode("utf-8")
+
+
+def test_ally_summary_event_roundtrip():
+    raw = serialize(
+        AllySummaryEvent(
+            topic="Holiday booking",
+            classification="travel",
+            agent_words=120,
+            user_words=45,
+            message_count=8,
+            uk_time="2026-06-27 14:30",
+            warning=True,
+        )
+    )
+    kind, data, event_id = _parse_frame(raw)
+    assert kind == "ally_summary"
+    assert data == {
+        "topic": "Holiday booking",
+        "classification": "travel",
+        "agent_words": 120,
+        "user_words": 45,
+        "message_count": 8,
+        "uk_time": "2026-06-27 14:30",
+        "warning": True,
+    }
+    assert event_id is None
+    assert "id:" not in raw.decode("utf-8")
 
 
 def test_framing_is_strict():

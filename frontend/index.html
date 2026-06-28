@@ -23,6 +23,31 @@
         <button id="new-chat" type="button">New chat</button>
       </header>
       <ul id="session-list" class="session-list"></ul>
+
+      <section id="ally-panel" class="ally-panel" aria-label="Ally summary">
+        <header class="ally-panel-header">
+          <span class="ally-panel-title">Ally</span>
+          <span id="ally-warning" class="ally-warning" hidden aria-hidden="true">&#9888;</span>
+        </header>
+        <dl class="ally-fields">
+          <div class="ally-row">
+            <dt>Topic</dt>
+            <dd id="ally-topic" class="ally-value"></dd>
+          </div>
+          <div class="ally-row">
+            <dt>Class</dt>
+            <dd id="ally-class" class="ally-value"></dd>
+          </div>
+          <div class="ally-row">
+            <dt>UK time</dt>
+            <dd id="ally-time" class="ally-value"></dd>
+          </div>
+          <div class="ally-row">
+            <dt>Length</dt>
+            <dd id="ally-length" class="ally-value"></dd>
+          </div>
+        </dl>
+      </section>
     </aside>
 
     <main class="main-pane">

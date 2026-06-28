@@ -9,6 +9,8 @@ class Settings:
     anthropic_api_key: str
     conversations_db_path: Path
     anthropic_model: str | None
+    ally_late_window: str = "21:30-05:00"
+    ally_summary_model: str = "claude-haiku-4-5-20251001"
 
 
 def load_settings() -> Settings:
@@ -26,9 +28,16 @@ def load_settings() -> Settings:
     model_value = (os.environ.get("ANTHROPIC_MODEL") or "").strip()
     model: str | None = model_value or None
 
+    ally_late_window = (os.environ.get("ALLY_LATE_WINDOW") or "").strip() or "21:30-05:00"
+    ally_summary_model = (
+        (os.environ.get("ALLY_SUMMARY_MODEL") or "").strip() or "claude-haiku-4-5-20251001"
+    )
+
     return Settings(
         app_auth_token=token,
         anthropic_api_key=api_key,
         conversations_db_path=db_path,
         anthropic_model=model,
+        ally_late_window=ally_late_window,
+        ally_summary_model=ally_summary_model,
     )

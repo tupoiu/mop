@@ -40,14 +40,26 @@ class _MessageRow(TypedDict):
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
-# Pinned SSE fixture used by test_sse_consumer.py. Each chunk is one complete
-# event block (event + data + blank line). The order mirrors a real turn:
-# text preamble → tool call → tool result → text response → done.
+# Pinned SSE fixture used by test_sse_consumer.py and test_ally_panel.py. Each
+# chunk is one complete event block (event + data + blank line). The order
+# mirrors a real turn: ally_metrics (immediate, reflects the just-sent user
+# message) → text preamble → tool call → tool result → text response →
+# ally_summary (just before done) → done.
+#
+# The ally_metrics / ally_summary blocks carry no `id:` line because, like the
+# real serializer (app/events.py), those events have no message_ord. The
+# ally_summary sets warning:true with a Scientific classification so the
+# warning-state e2e test has deterministic data to assert. ally events route to
+# the sidebar panel (frontend/app.js), not the conversation, so they do not add
+# conversation bubbles and do not affect test_sse_consumer.py's bubble
+# assertions.
 _SSE_FIXTURE_CHUNKS: list[bytes] = [
+    b'event: ally_metrics\ndata: {"agent_words":0,"user_words":2,"message_count":1,"uk_time":"01:30"}\n\n',
     b'event: text\nid: 1\ndata: {"text": "Hello ", "message_ord": 1}\n\n',
     b'event: tool_call\nid: 2\ndata: {"id": "tc1", "name": "echo", "input": {"text": "hi"}, "message_ord": 2}\n\n',
     b'event: tool_result\nid: 3\ndata: {"tool_use_id": "tc1", "output": "hi", "is_error": false, "message_ord": 3}\n\n',
     b'event: text\nid: 4\ndata: {"text": "world", "message_ord": 4}\n\n',
+    b'event: ally_summary\ndata: {"topic":"Quantum entanglement","classification":"Scientific","agent_words":2,"user_words":2,"message_count":2,"uk_time":"01:30","warning":true}\n\n',
     b'event: done\ndata: {"session_id": "stub-session", "usage": {}, "is_error": false}\n\n',
 ]
 

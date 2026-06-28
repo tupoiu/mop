@@ -1,3 +1,4 @@
+import asyncio
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -15,8 +16,22 @@ from claude_agent_sdk import (
 
 from app import db
 from app.agent import _build_options, stream_turn
+from app.ally import AllyAnalysis
 from app.config import Settings
 from app.db import SessionRow
+
+
+@pytest.fixture(autouse=True)
+def _stub_analyze(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Default: make the side-model deterministic and instant for every turn.
+
+    Individual tests may re-monkeypatch ``app.ally.analyze`` to override.
+    """
+
+    async def fake_analyze(settings: Any, messages: Any) -> AllyAnalysis:
+        return AllyAnalysis(topic="Test topic", classification="Other")
+
+    monkeypatch.setattr("app.ally.analyze", fake_analyze)
 
 
 def _settings(model: str | None = None) -> Settings:
@@ -152,18 +167,20 @@ async def test_happy_path_yields_expected_events_and_persists_rows(
 
     kinds = [type(e).__name__ for e in events]
     assert kinds == [
+        "AllyMetricsEvent",
         "TextEvent",
         "ToolCallEvent",
         "ToolResultEvent",
         "TextEvent",
+        "AllySummaryEvent",
         "DoneEvent",
     ]
-    assert events[0].text == "thinking..."  # type: ignore[attr-defined]
-    assert events[1].name == "echo"  # type: ignore[attr-defined]
-    assert events[2].is_error is False  # type: ignore[attr-defined]
-    assert events[2].output == "x"  # type: ignore[attr-defined]
-    assert events[3].text == "all done"  # type: ignore[attr-defined]
-    assert events[4].session_id == "sdk-123"  # type: ignore[attr-defined]
+    assert events[1].text == "thinking..."  # type: ignore[attr-defined]
+    assert events[2].name == "echo"  # type: ignore[attr-defined]
+    assert events[3].is_error is False  # type: ignore[attr-defined]
+    assert events[3].output == "x"  # type: ignore[attr-defined]
+    assert events[4].text == "all done"  # type: ignore[attr-defined]
+    assert events[6].session_id == "sdk-123"  # type: ignore[attr-defined]
 
     rows = await db.list_messages(db_path, session.id)
     assert [r.kind for r in rows] == ["text", "tool_call", "tool_result", "text"]
@@ -230,8 +247,8 @@ async def test_error_mid_stream_yields_error_event_and_no_done(
     events = [ev async for ev in stream_turn(_settings(), db_path, session, "hi")]
 
     kinds = [type(e).__name__ for e in events]
-    assert kinds == ["TextEvent", "ErrorEvent"]
-    assert "kaboom" in events[1].message  # type: ignore[attr-defined]
+    assert kinds == ["AllyMetricsEvent", "TextEvent", "ErrorEvent"]
+    assert "kaboom" in events[2].message  # type: ignore[attr-defined]
 
     rows = await db.list_messages(db_path, session.id)
     assert [r.kind for r in rows] == ["text", "error"]
@@ -249,8 +266,9 @@ async def test_done_event_carries_usage_and_session_id(
     )
     events = [ev async for ev in stream_turn(_settings(), db_path, session, "hi")]
 
-    assert len(events) == 1
-    done = events[0]
+    kinds = [type(e).__name__ for e in events]
+    assert kinds == ["AllyMetricsEvent", "AllySummaryEvent", "DoneEvent"]
+    done = events[-1]
     assert done.session_id == "sdk-Z"  # type: ignore[attr-defined]
     assert done.usage == {"input_tokens": 99, "output_tokens": 11}  # type: ignore[attr-defined]
     assert done.is_error is False  # type: ignore[attr-defined]
@@ -274,3 +292,156 @@ async def test_subsequent_turn_touches_session_without_overwriting_sdk_id(
     assert again is not None
     assert again.sdk_session_id == "sdk-FIXED"
     assert again.updated_at >= refreshed.updated_at
+
+
+# ----- ally events -----
+
+
+async def _persist_user_text(db_path: Path, session_id: str, text: str) -> None:
+    await db.append_message(
+        db_path,
+        session_id=session_id,
+        role="user",
+        kind="text",
+        content_json=json.dumps({"text": text}),
+    )
+
+
+async def test_first_event_is_metrics_reflecting_sent_user_message(
+    db_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    session = await db.create_session(db_path, title="t")
+    # Caller (main.py) persists the user message before stream_turn runs.
+    await _persist_user_text(db_path, session.id, "one two three")
+
+    _patch_query(
+        monkeypatch,
+        [_assistant(TextBlock(text="ok")), _result(session_id="sdk-1")],
+    )
+    events = [ev async for ev in stream_turn(_settings(), db_path, session, "one two three")]
+
+    first = events[0]
+    assert type(first).__name__ == "AllyMetricsEvent"
+    assert first.message_count == 1  # type: ignore[attr-defined]
+    assert first.user_words == 3  # type: ignore[attr-defined]
+    assert first.agent_words == 0  # type: ignore[attr-defined]
+    assert isinstance(first.uk_time, str) and first.uk_time  # type: ignore[attr-defined]
+
+
+async def test_summary_event_precedes_done_and_carries_analysis_and_refreshed_metrics(
+    db_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    session = await db.create_session(db_path, title="t")
+    await _persist_user_text(db_path, session.id, "hello there")
+
+    async def fake_analyze(settings: Any, messages: Any) -> AllyAnalysis:
+        return AllyAnalysis(topic="ethical hdmi cables", classification="Philosophical")
+
+    monkeypatch.setattr("app.ally.analyze", fake_analyze)
+
+    _patch_query(
+        monkeypatch,
+        [_assistant(TextBlock(text="four word reply here")), _result(session_id="sdk-2")],
+    )
+    events = [ev async for ev in stream_turn(_settings(), db_path, session, "hello there")]
+
+    kinds = [type(e).__name__ for e in events]
+    assert kinds[-2:] == ["AllySummaryEvent", "DoneEvent"]
+    summary = events[-2]
+    assert summary.topic == "ethical hdmi cables"  # type: ignore[attr-defined]
+    assert summary.classification == "Philosophical"  # type: ignore[attr-defined]
+    # Refreshed metrics include the assistant reply persisted during the turn.
+    assert summary.message_count == 2  # type: ignore[attr-defined]
+    assert summary.user_words == 2  # type: ignore[attr-defined]
+    assert summary.agent_words == 4  # type: ignore[attr-defined]
+
+
+async def test_text_events_precede_summary_event_non_blocking(
+    db_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    session = await db.create_session(db_path, title="t")
+
+    _patch_query(
+        monkeypatch,
+        [_assistant(TextBlock(text="streamed text")), _result(session_id="sdk-3")],
+    )
+    events = [ev async for ev in stream_turn(_settings(), db_path, session, "hi")]
+
+    kinds = [type(e).__name__ for e in events]
+    text_idx = kinds.index("TextEvent")
+    summary_idx = kinds.index("AllySummaryEvent")
+    assert text_idx < summary_idx
+
+
+async def test_summary_warning_true_when_in_window_and_scientific(
+    db_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    session = await db.create_session(db_path, title="t")
+
+    async def fake_analyze(settings: Any, messages: Any) -> AllyAnalysis:
+        return AllyAnalysis(topic="protein folding", classification="Scientific")
+
+    monkeypatch.setattr("app.ally.analyze", fake_analyze)
+    monkeypatch.setattr("app.ally.is_in_window", lambda window, now=None: True)
+
+    _patch_query(
+        monkeypatch,
+        [_assistant(TextBlock(text="ok")), _result(session_id="sdk-4")],
+    )
+    events = [ev async for ev in stream_turn(_settings(), db_path, session, "hi")]
+
+    summary = events[-2]
+    assert type(summary).__name__ == "AllySummaryEvent"
+    assert summary.warning is True  # type: ignore[attr-defined]
+
+
+async def test_summary_warning_false_when_outside_window(
+    db_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    session = await db.create_session(db_path, title="t")
+
+    async def fake_analyze(settings: Any, messages: Any) -> AllyAnalysis:
+        return AllyAnalysis(topic="protein folding", classification="Scientific")
+
+    monkeypatch.setattr("app.ally.analyze", fake_analyze)
+    monkeypatch.setattr("app.ally.is_in_window", lambda window, now=None: False)
+
+    _patch_query(
+        monkeypatch,
+        [_assistant(TextBlock(text="ok")), _result(session_id="sdk-5")],
+    )
+    events = [ev async for ev in stream_turn(_settings(), db_path, session, "hi")]
+
+    summary = events[-2]
+    assert type(summary).__name__ == "AllySummaryEvent"
+    assert summary.warning is False  # type: ignore[attr-defined]
+
+
+async def test_analysis_timeout_falls_back_to_placeholder(
+    db_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    session = await db.create_session(db_path, title="t")
+
+    async def slow_analyze(settings: Any, messages: Any) -> AllyAnalysis:
+        await asyncio.sleep(10)
+        return AllyAnalysis(topic="never", classification="Scientific")
+
+    monkeypatch.setattr("app.ally.analyze", slow_analyze)
+    monkeypatch.setattr("app.agent.ANALYSIS_TIMEOUT_SECONDS", 0.01)
+
+    _patch_query(
+        monkeypatch,
+        [_assistant(TextBlock(text="ok")), _result(session_id="sdk-6")],
+    )
+    events = [ev async for ev in stream_turn(_settings(), db_path, session, "hi")]
+
+    kinds = [type(e).__name__ for e in events]
+    assert kinds[-2:] == ["AllySummaryEvent", "DoneEvent"]
+    summary = events[-2]
+    from app.ally import TOPIC_PLACEHOLDER
+
+    assert summary.topic == TOPIC_PLACEHOLDER  # type: ignore[attr-defined]
+    assert summary.classification == "Other"  # type: ignore[attr-defined]
+    # No orphaned side-model task should survive the turn.
+    pending = [t for t in asyncio.all_tasks() if not t.done()]
+    assert all(t is asyncio.current_task() for t in pending)

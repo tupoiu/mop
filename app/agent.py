@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from pathlib import Path
@@ -15,7 +16,7 @@ from claude_agent_sdk import (
     query,
 )
 
-from app import db, tools
+from app import ally, db, tools
 from app.config import Settings
 from app.db import SessionRow
 from app.events import (
@@ -28,6 +29,11 @@ from app.events import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Upper bound on how long the streaming turn waits for the side-model analysis
+# at completion. Referenced via the module global at call time so it can be
+# monkeypatched in tests.
+ANALYSIS_TIMEOUT_SECONDS = 8.0
 
 
 class _ToolCallPayload(TypedDict):
@@ -77,6 +83,18 @@ async def stream_turn(
     sdk_session_id_persisted = session.sdk_session_id is not None
 
     streamed_any_text = False
+
+    # Emit metrics first so the panel reflects the just-sent user message
+    # (already persisted by the caller) before the assistant reply completes.
+    messages = await db.list_messages(db_path, session.id)
+    yield ally.metrics_event(messages)
+
+    # Launch the side-model analysis concurrently so streamed text is never
+    # delayed; it is awaited only at turn completion.
+    window = ally.parse_late_window(settings.ally_late_window)
+    analysis_task: asyncio.Task[ally.AllyAnalysis] = asyncio.create_task(
+        ally.analyze(settings, messages)
+    )
 
     try:
         async for message in query(prompt=user_content, options=options):
@@ -151,6 +169,18 @@ async def stream_turn(
                     sdk_session_id_persisted = True
                 else:
                     await db.touch_session(db_path, session.id)
+                try:
+                    analysis = await asyncio.wait_for(
+                        analysis_task, ANALYSIS_TIMEOUT_SECONDS
+                    )
+                except Exception:
+                    # Timeout or any failure → graceful placeholder; the panel
+                    # and DoneEvent still emit (Reqs 2.3, 3.3, 8.3).
+                    analysis_task.cancel()
+                    analysis = ally.AllyAnalysis(ally.TOPIC_PLACEHOLDER, "Other")
+                # Recompute over the updated history (now includes the reply).
+                updated = await db.list_messages(db_path, session.id)
+                yield ally.summary_event(updated, analysis, window)
                 yield DoneEvent(
                     session_id=message.session_id,
                     usage=message.usage or {},
@@ -168,3 +198,14 @@ async def stream_turn(
         )
         yield ErrorEvent(message=str(exc))
         return
+    finally:
+        # Guarantee no orphaned side-model task on any exit path
+        # (error, early return, or generator close) — Req 8.3.
+        if not analysis_task.done():
+            analysis_task.cancel()
+            try:
+                await analysis_task
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                logger.debug("ally analysis task failed during cleanup", exc_info=True)

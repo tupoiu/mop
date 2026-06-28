@@ -69,6 +69,7 @@ async function selectSession(sessionId) {
   document.querySelectorAll("#session-list li").forEach((li) => {
     li.classList.toggle("active", li.dataset.sessionId === sessionId);
   });
+  resetAllyPanel();
   const { messages } = await api("GET", `/api/sessions/${sessionId}/messages`);
   renderHistory(messages);
 }
@@ -134,6 +135,30 @@ function renderHistory(messages) {
   }
 }
 
+// --- Ally summary panel (ephemeral; never persisted) ---
+
+function allyLengthString(data) {
+  const agent = data.agent_words ?? "";
+  const user = data.user_words ?? "";
+  const messages = data.message_count ?? "";
+  return `${agent}/${user}W (A/U), ${messages}M`;
+}
+
+function resetAllyPanel() {
+  const topic = document.getElementById("ally-topic");
+  const cls = document.getElementById("ally-class");
+  const time = document.getElementById("ally-time");
+  const length = document.getElementById("ally-length");
+  if (topic) topic.textContent = "";
+  if (cls) cls.textContent = "";
+  if (time) time.textContent = "";
+  if (length) length.textContent = "";
+  const panel = document.getElementById("ally-panel");
+  if (panel) panel.classList.remove("warning");
+  const warning = document.getElementById("ally-warning");
+  if (warning) warning.hidden = true;
+}
+
 // --- SSE consumer (fetch + ReadableStream; native EventSource can't send headers) ---
 
 function parseSSEBlock(block) {
@@ -194,6 +219,29 @@ async function streamTurn(sessionId, userContent) {
             `Result${data.is_error ? " (error)" : ""}`,
             data.output,
           );
+        } else if (type === "ally_metrics") {
+          const length = document.getElementById("ally-length");
+          if (length) length.textContent = allyLengthString(data);
+          const time = document.getElementById("ally-time");
+          if (time) time.textContent = data.uk_time ?? "";
+        } else if (type === "ally_summary") {
+          const topic = document.getElementById("ally-topic");
+          if (topic) topic.textContent = data.topic ?? "";
+          const cls = document.getElementById("ally-class");
+          if (cls) cls.textContent = data.classification ?? "";
+          const time = document.getElementById("ally-time");
+          if (time) time.textContent = data.uk_time ?? "";
+          const length = document.getElementById("ally-length");
+          if (length) length.textContent = allyLengthString(data);
+          const panel = document.getElementById("ally-panel");
+          const warning = document.getElementById("ally-warning");
+          if (data.warning) {
+            if (panel) panel.classList.add("warning");
+            if (warning) warning.hidden = false;
+          } else {
+            if (panel) panel.classList.remove("warning");
+            if (warning) warning.hidden = true;
+          }
         } else if (type === "done") {
           if (!assistantBubble.textContent) assistantBubble.remove();
           await loadSessions();
@@ -220,6 +268,7 @@ async function init() {
     activeSessionId = session.id;
     await loadSessions();
     document.getElementById("conversation").innerHTML = "";
+    resetAllyPanel();
   });
 
   document.getElementById("composer-input").addEventListener("keydown", (e) => {

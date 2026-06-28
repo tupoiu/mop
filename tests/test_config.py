@@ -7,7 +7,14 @@ from app.config import Settings, load_settings
 
 
 def _clean_env(monkeypatch):
-    for var in ("APP_AUTH_TOKEN", "ANTHROPIC_API_KEY", "CONVERSATIONS_DB_PATH", "ANTHROPIC_MODEL"):
+    for var in (
+        "APP_AUTH_TOKEN",
+        "ANTHROPIC_API_KEY",
+        "CONVERSATIONS_DB_PATH",
+        "ANTHROPIC_MODEL",
+        "ALLY_LATE_WINDOW",
+        "ALLY_SUMMARY_MODEL",
+    ):
         monkeypatch.delenv(var, raising=False)
 
 
@@ -22,6 +29,8 @@ def test_load_settings_with_required_vars(monkeypatch):
     assert settings.anthropic_api_key == "key"
     assert settings.conversations_db_path == Path("conversations.db")
     assert settings.anthropic_model is None
+    assert settings.ally_late_window == "21:30-05:00"
+    assert settings.ally_summary_model == "claude-haiku-4-5-20251001"
 
 
 def test_load_settings_with_optional_overrides(monkeypatch):
@@ -35,6 +44,32 @@ def test_load_settings_with_optional_overrides(monkeypatch):
 
     assert settings.conversations_db_path == Path("/data/conv.db")
     assert settings.anthropic_model == "claude-sonnet-4-6"
+
+
+def test_load_settings_ally_overrides(monkeypatch):
+    _clean_env(monkeypatch)
+    monkeypatch.setenv("APP_AUTH_TOKEN", "tok")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "key")
+    monkeypatch.setenv("ALLY_LATE_WINDOW", "22:00-06:00")
+    monkeypatch.setenv("ALLY_SUMMARY_MODEL", "claude-custom-model")
+
+    settings = load_settings()
+
+    assert settings.ally_late_window == "22:00-06:00"
+    assert settings.ally_summary_model == "claude-custom-model"
+
+
+def test_load_settings_ally_blank_falls_back_to_default(monkeypatch):
+    _clean_env(monkeypatch)
+    monkeypatch.setenv("APP_AUTH_TOKEN", "tok")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "key")
+    monkeypatch.setenv("ALLY_LATE_WINDOW", "   ")
+    monkeypatch.setenv("ALLY_SUMMARY_MODEL", "")
+
+    settings = load_settings()
+
+    assert settings.ally_late_window == "21:30-05:00"
+    assert settings.ally_summary_model == "claude-haiku-4-5-20251001"
 
 
 def test_load_settings_missing_token_raises(monkeypatch):
