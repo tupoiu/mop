@@ -41,3 +41,17 @@ Ideas and enhancements to consider for future development. These are not committ
   - Toggle Offline (both Web Search and Web Fetch)
 
 - **Keybinds** Other than the command palette, add "Ctrl + PageUp" and "Ctrl + PageDown" Keybinds to shift between chats.
+
+- **Refactor away from "golden-value tests" to typed structures** As of 28/06/2026, in test_ally.py, we have a "golden-value" test which fixes values of strings so that the ally panel's dependents can't break. To start with, the ally panel shouldn't really have dependents, but more importantly, fixing string values in tests locks in functionality that we want to be able to refactor. We should move to reflecting these specific values with enums/StrEnums. In addition we should do a sweep through the codebase of all other uses of this pattern, and audit them to see whether it makes sense to refactor. We may be able to do this with Haiku/a small model.
+
+- **Refactoring as a practice** Refactoring isn't a one time operation - we should do regular audits on the codebase to find potential refactors, and to monitor tech debt, if possible attempting to do them and autonomously creating a PR/branch. In addition we should carefully consider the types of refactors that are necessary. E.g.:
+  - Represent contracts as types if it's easy
+  - Code reuse (Write Everything Twice - 3 times suggests a refactor)
+  - Dead code removal (are there linters for this?)
+  - High level overview of categorisations of code into patterns and creation of a pie chart of code use by each pattern it falls into. 
+  - Objects which are doing too much (can they be decomposed?)
+We could in theory parallelise this across subagents.
+
+- **Linter audit** Linters let us catch easy mistakes/waste earlier (before commit). We should audit the linter to make sure it's using sensible rules, and add them if it's easy.
+
+- **Use TS instead of JS** Basically a free win on correctness.
